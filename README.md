@@ -40,14 +40,14 @@ To run this application on your local machine, follow these setup steps:
 
 ## The Mathematical Core
 
-The heart of the project relies on probability theory and dynamic programming implemented in Python to resolve the optimal path through any given blackjack hand. The system evaluates the Expected Value (EV) of every possible decision to prove that adhering to mathematically optimal play minimizes long-term losses compared to arbitrary or dealer-mimicking strategies.
+The heart of the project relies on probability theory and dynamic programming implemented in Python to resolve the optimal path through any given blackjack hand. The system evaluates the EV of every possible decision to prove that adhering to mathematically optimal play minimizes long-term losses compared to arbitrary or dealer-mimicking strategies.
 
 ### Dealer Probability Distribution
 The `dealer_prob` function uses recursion to calculate the exact probability of every possible final state the dealer can reach (17, 18, 19, 20, 21, or bust) based on their single visible upcard. The function explores every possible card draw, multiplying the current probability by the probability of the newly drawn card, accumulating these values into a dictionary. It strictly adheres to the rule that the dealer must hit on a soft 17. The recursive tree terminates when a final resting state is achieved.
 
 
 ### Expected Value and Conditional Probability
-The `compare_stand` function calculates the Expected Value (EV) of choosing to stand on a given total against a given dealer upcard, measured in bet units where a win pays +1, a loss costs -1, and a push pays 0. 
+The `compare_stand` function calculates the EV of choosing to stand on a given total against a given dealer upcard, measured in bet units where a win pays +1, a loss costs -1, and a push pays 0. 
 
 A critical component of this calculation is handling the dealer peeking rule. If the dealer upcard is an Ace or a 10-value card, they check their hidden card for a Blackjack before the player acts. If the game continues to the player's turn, it mathematically guarantees the dealer does not have Blackjack. The code filters out the corresponding cards (removing 10s if the upcard is an Ace, and removing Aces if the upcard is a 10) and recalculates the relative probabilities in the adjusted_prob dictionary, ensuring perfect accuracy.
 
@@ -68,9 +68,9 @@ Because these functions call each other recursively and the same states recur of
 To prove the strategy tables work, the `simulator(N, strategy)` function plays N automated rounds.
 
 * It initializes a 6-deck shoe and handles deck penetration, reshuffling only when cards run out.
-*It iterates through hands using a queue system (hands_to_play), which efficiently handles split hands by appending newly split branches to the queue for sequential evaluation.
-*It applies the injected strategy function to make decisions, tracking doubles and busts.
-*Finally, it triggers the dealer's drawing rules and compares totals, keeping a running tally of net units (bankroll performance). It returns a detailed history array used for visualization.
+* It iterates through hands using a queue system (hands_to_play), which efficiently handles split hands by appending newly split branches to the queue for sequential evaluation.
+* It applies the injected strategy function to make decisions, tracking doubles and busts.
+* Finally, it triggers the dealer's drawing rules and compares totals, keeping a running tally of net units (bankroll performance). It returns a detailed history array used for visualization.
 
 
 ---
