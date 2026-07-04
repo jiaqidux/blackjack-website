@@ -9,7 +9,7 @@ A full-stack Blackjack web application built as the final project for [CS50's In
 ---
 
 ## How to run
-**Try it live:** <link de Render aquí>
+Try it live: https://blackjack-optimal-simulator.onrender.com
  
 Or run it locally:
 ```bash
