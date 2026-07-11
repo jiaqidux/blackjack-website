@@ -17,7 +17,7 @@ The core of this project is a mix of probability and dynamic programming, used t
 The `dealer_prob` function figures out, using recursion, exactly how likely the dealer is to land on each possible final total (17 through 21, or bust), based only on their face-up card. It walks through every card they could possibly draw next, multiplying probabilities together as it goes, and keeps adding up the odds until the dealer reaches a stopping point. It also follows the real casino rule that the dealer has to hit on a soft 17, not stand.
 
 ### Expected Value and Conditional Probability
-The `compare_stand` function calculates what standing on a given total is worth against a given dealer card, in bet units — a win is +1, a loss is -1, a push is 0.
+The `compare_stand` function calculates what standing on a given total is worth against a given dealer card, in bet units: a win is +1, a loss is -1, a push is 0.
 
 One tricky part here is the dealer's peek. If their face-up card is an Ace or a 10, they secretly check for blackjack before you even get to make a decision. So if the hand hasn't already ended, that means they don't have blackjack, which is useful information. The code accounts for this by removing the cards that would've given them blackjack from the probability pool (removing 10s if they show an Ace, or Aces if they show a 10) and recalculating the odds from there, so the math stays exact instead of approximate.
 
