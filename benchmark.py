@@ -1,5 +1,5 @@
 import time
-from blackjack import simulator, optimal_strategy, random_strategy, calculate_ev
+from blackjack import simulator, optimal_strategy, random_strategy, dealer_strategy, calculate_ev
 
 N = 100_000
 
@@ -28,20 +28,30 @@ def main():
     optimal_results = simulator(N, optimal_strategy)
     t_optimal = time.perf_counter() - t0
 
+    print(f"Running {N:,} rounds with dealer_strategy...")
+    t0 = time.perf_counter()
+    dealer_results = simulator(N, dealer_strategy)
+    t_dealer = time.perf_counter() - t0
+
     print(f"Running {N:,} rounds with random_strategy (control)...")
     t0 = time.perf_counter()
     random_results = simulator(N, random_strategy)
     t_random = time.perf_counter() - t0
 
     ev_optimal = summarize("OPTIMAL STRATEGY", optimal_results, t_optimal)
+    ev_dealer = summarize("DEALER STRATEGY", dealer_results, t_dealer)
     ev_random = summarize("RANDOM STRATEGY (control)", random_results, t_random)
 
     print("\nCOMPARISON")
-    diff = ev_optimal - ev_random
-    # how much closer to break-even the optimal strategy gets us vs playing randomly
-    reduction_pct = (1 - abs(ev_optimal) / abs(ev_random)) * 100
-    print(f"EV difference per hand: {diff:+.4f}")
-    print(f"Expected loss reduction vs random strategy: {reduction_pct:.1f}%")
+    diff_random = ev_optimal - ev_random
+    diff_dealer = ev_optimal - ev_dealer
+    # how much closer to break-even the optimal strategy gets us vs each baseline
+    reduction_pct_random = (1 - abs(ev_optimal) / abs(ev_random)) * 100
+    reduction_pct_dealer = (1 - abs(ev_optimal) / abs(ev_dealer)) * 100
+    print(f"EV difference per hand vs random: {diff_random:+.4f}")
+    print(f"Expected loss reduction vs random strategy: {reduction_pct_random:.1f}%")
+    print(f"EV difference per hand vs dealer: {diff_dealer:+.4f}")
+    print(f"Expected loss reduction vs dealer strategy: {reduction_pct_dealer:.1f}%")
 
     # calculate_ev is decorated with @cache, so this tells us how many unique
     # (total, aces, dealer_card, ...) states actually got computed vs reused

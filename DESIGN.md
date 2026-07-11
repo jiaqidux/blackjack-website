@@ -5,80 +5,64 @@
 ---
 
 ## Description
-This project is a comprehensive web application that functions as a playable Blackjack game, an optimal strategy calculator, and a Monte Carlo strategy simulator. Built using Python for the computational backend, Flask for the web server, and a modular HTML, CSS, and JavaScript architecture for the frontend, it demonstrates the underlying mathematics of casino blackjack. The application evaluates the Expected Value (EV) of every possible decision to prove that adhering to mathematically optimal play minimizes long-term losses compared to arbitrary or dealer-mimicking strategies.
+This project is a web app that functions as a playable Blackjack game, an optimal strategy calculator, and a Monte Carlo strategy simulator. It's built with Python on the backend, Flask as the web server, and plain JavaScript (organized into modules) on the frontend. The whole point is to show the math behind Blackjack strategy, not just state it. Every decision the app recommends comes from actually calculating its expected value, so you can check that "playing optimally" really does lose less money over time compared to arbitrary or dealer-mimicking strategies.
 
 ---
 
-## Python Backend: The Mathematical Enginal
+## Python Backend: The Math Engine
 
-The heart of the project relies on probability theory and dynamic programming implemented in Python to resolve the optimal path through any given blackjack hand. The system evaluates the EV of every possible decision to prove that adhering to mathematically optimal play minimizes long-term losses compared to arbitrary or dealer-mimicking strategies.
+The core of this project is a mix of probability and dynamic programming, used to figure out the best move for any Blackjack hand. Instead of guessing or hard-coding a strategy chart, the code calculates the expected value (EV) of every possible decision directly.
 
 ### Dealer Probability Distribution
-The `dealer_prob` function uses recursion to calculate the exact probability of every possible final state the dealer can reach (17, 18, 19, 20, 21, or bust) based on their single visible upcard. The function explores every possible card draw, multiplying the current probability by the probability of the newly drawn card, accumulating these values into a dictionary. It strictly adheres to the rule that the dealer must hit on a soft 17. The recursive tree terminates when a final resting state is achieved.
-
+The `dealer_prob` function figures out, using recursion, exactly how likely the dealer is to land on each possible final total (17 through 21, or bust), based only on their face-up card. It walks through every card they could possibly draw next, multiplying probabilities together as it goes, and keeps adding up the odds until the dealer reaches a stopping point. It also follows the real casino rule that the dealer has to hit on a soft 17, not stand.
 
 ### Expected Value and Conditional Probability
-The `compare_stand` function calculates the EV of choosing to stand on a given total against a given dealer upcard, measured in bet units where a win pays +1, a loss costs -1, and a push pays 0. 
+The `compare_stand` function calculates what standing on a given total is worth against a given dealer card, in bet units — a win is +1, a loss is -1, a push is 0.
 
-A critical component of this calculation is handling the dealer peeking rule. If the dealer upcard is an Ace or a 10-value card, they check their hidden card for a Blackjack before the player acts. If the game continues to the player's turn, it mathematically guarantees the dealer does not have Blackjack. The code filters out the corresponding cards (removing 10s if the upcard is an Ace, and removing Aces if the upcard is a 10) and recalculates the relative probabilities in the adjusted_prob dictionary, ensuring perfect accuracy.
-
+One tricky part here is the dealer's peek. If their face-up card is an Ace or a 10, they secretly check for blackjack before you even get to make a decision. So if the hand hasn't already ended, that means they don't have blackjack, which is useful information. The code accounts for this by removing the cards that would've given them blackjack from the probability pool (removing 10s if they show an Ace, or Aces if they show a 10) and recalculating the odds from there, so the math stays exact instead of approximate.
 
 ### Dynamic Programming for Optimal Play
-The `calculate_ev` function determines the mathematical value of hitting, standing, doubling, and splitting. It applies recursion with memoization via Python's `@cache` decorator to traverse the entire decision tree. 
-* Standing scales directly with the outputs of `compare_stand`.
-* Hitting operates recursively: for each possible next card, it computes the new hand state and recursively calls itself to find the best EV from that state onward, weighted by probability.
-* Doubling considers each possible card and records either a loss of two units on a bust or the standing EV at double stakes otherwise.
-* Splitting recursively evaluates the best EV from each of the two resulting hands after one more card each, as a split hand is played independently.
+The `calculate_ev` function is where hitting, standing, doubling, and splitting all get compared. It uses recursion to work this out, and Python's `@cache` decorator to remember every hand state it's already solved.
+* Standing just reuses whatever `compare_stand` already worked out.
+* Hitting is recursive: for every possible next card, it works out the new hand, and then calls itself again to see what the best move from there would be, weighted by how likely that card is.
+* Doubling checks each possible next card and either counts a loss of two units (if you'd bust) or doubles the standing value otherwise.
+* Splitting recursively works out the best value of each of the two new hands, since a split hand plays out completely on its own.
 
-Because these functions call each other recursively and the same states recur often, caching ensures any given state is computed exactly once and reused, making the calculation tractable rather than exponential. Finally, `optimal_strategy` compares the four actions and selects the specific string label matching the maximum value.
+Without caching, this would spiral out of control since the same hand can come up thousands of times across different branches of the recursion. Caching means each unique hand only ever gets solved once. Once all four options are worked out, `optimal_strategy` just picks whichever one has the highest value.
 
+One simplification worth mentioning: the probability engine treats the deck as infinite rather than tracking exactly which cards are left in a real shoe. This keeps the number of possible states small enough for caching to work well, and the accuracy loss is negligible once you're simulating a real six-deck shoe anyway.
 
 ### The Monte Carlo Simulator
+To actually test whether all this math holds up, `simulator(N, strategy)` plays out N full rounds automatically.
 
-To prove the strategy tables work, the `simulator(N, strategy)` function plays N automated rounds.
-
-* It initializes a 6-deck shoe and handles deck penetration, reshuffling only when cards run out.
-* It iterates through hands using a queue system (hands_to_play), which efficiently handles split hands by appending newly split branches to the queue for sequential evaluation.
-* It applies the injected strategy function to make decisions, tracking doubles and busts.
-* Finally, it triggers the dealer's drawing rules and compares totals, keeping a running tally of net units (bankroll performance). It returns a detailed history array used for visualization.
-
+* It initializes a six-deck shoe and reshuffles once the deck runs low, the same way a real table would.
+* It iterates through hands using a queue system (hands_to_play), which efficiently handles split hands by appending newly split branches to the queue.
+* It plays out whatever strategy function you give it, keeping track of doubles and busts along the way.
+* At the end, it plays out the dealer's hand, compares totals, and keeps a running total of units won or lost, which we can graph over time.
 
 ---
 
 ## Web Server Integration (Flask)
 
-The `app.py` file serves as the bridge between the mathematical backend and the client interface.
+`app.py` is what connects the math engine to the actual game people play.
 
-To prevent severe performance bottlenecks, the three canonical strategy matrices (Hard Totals, Soft Totals, and Pairs) are pre-calculated as global variables when the server initially starts. Running the deep recursive tree for every matrix cell upon every individual page load would be computationally prohibitive.
+To avoid doing all that expensive recursive math on every single page load, the three main strategy charts (Hard Totals, Soft Totals, and Pairs) are calculated once, right when the server starts up, and just reused after that.
 
-The server features distinct architectural choices for routing:
-* The `/get_hint` route calls `optimal_strategy` directly on the exact state of the player's current hand sent as query parameters, since a live hand can reach intermediate states beyond the canonical ones displayed in the static table.
-* The `/run_simulator` endpoint acts as a template renderer, serving the static HTML interface where the user sets up simulation parameters.
-* The `/simulate` endpoint functions as a RESTful JSON API. It accepts the user's N parameter, validates it to prevent server crashes, invokes the simulation engine three times (optimal, dealer, and random strategies), and packages the comparative tracking arrays into a single JSON response.
-
+A few routing choices worth calling out:
+* `/get_hint` calls `optimal_strategy` directly with whatever the player's hand actually looks like right now, sent as query parameters — since a real hand in progress can end up in situations the static strategy chart doesn't cover.
+* `/run_simulator` just renders the page where you set up a simulation.
+* `/simulate` is a proper JSON API: it takes in how many rounds you want (`N`), checks that it's a reasonable number, runs the simulation three times (optimal, dealer-style, and random), and sends back all three results together so the frontend can compare them.
 
 ---
 
 ## Frontend Architecture
 
-The game itself is implemented in vanilla JavaScript using ES modules, introduced midway through development after the original single-file script became difficult to debug. Responsibility is decoupled across distinct modules:
+The game runs on plain JavaScript, split into modules by responsibility. This wasn't the original setup: the game started as one long script, and got split apart partway through once that became too hard to debug.
 
-* **state.js:** Holds a single shared object containing the global runtime state of the active game, including hand totals, shoe composition, balance, current bet, and split tracking flags.
-* **deck.js:** Mimics the backend deck configurations by building and shuffling the six-deck shoe and translating drawn cards into their respective Blackjack values.
-* **ui.js:** Manages all DOM manipulations, including rendering card elements from a custom sprite sheet, updating display scores, and toggling button visibility states across different game phases.
-* **actions.js:** Implements the core player mechanics. Splitting is the most intricate component: it resets hand totals, deals a card to each split branch, handles independent bets, tracks doubled-down flags, and manages an active-hand pointer to route subsequent actions to the correct sub-hand.
-* **hints.js:** Handles real-time hints by tracking the current hand state and performing asynchronous API `fetch` requests to the `/get_hint` endpoint whenever it is the player's turn.
-* **events.js:** Centralizes all DOM event listeners, including chip selection, action buttons, and a global document-level click listener that advances game phases or triggers cleanups.
-* **game.js:** Controls the core operational game loop. `startGame` initializes round variables and deals opening cards. `dealerPlay` reveals the hole card and resolves the dealer's hand under the soft-17 rule with automated time delays. `endGame` drives the evaluation transition, while `reset` clears the table graphics and returns the interface to the pristine betting state.
-
----
-
-## Design Reflections
-
-Several engineering decisions in this project required weighing theoretical correctness against real-world computational performance. 
-
-The infinite-deck assumption used throughout the probability calculations, rather than tracking the exact shifting composition of a finite shoe, keeps the state space small enough for the recursive EV calculations to terminate quickly and cache effectively. This comes at the cost of a minor amount of theoretical precision that becomes statistically negligible when simulating a standard casino six-deck shoe.
-
-Precomputing the strategy tables once at server startup, rather than on each individual request, reflects a broader architectural principle applied throughout the backend: separating expensive, static computation from cheap, per-request routing logic wherever the two can be cleanly divided. On the frontend, migrating from a monolithic script to ES modules organized strictly by responsibility was a choice made to keep testing and debugging tractable as the scale of the codebase grew.
-
-Building the strategy engine, the interactive game, and the statistical simulator on top of the exact same core probability functions was the central architectural choice of the project. It ensures that the interface makes a genuine, verifiable claim: the strategy it recommends to the user is not an arbitrary rule of thumb, but the direct output of an exact calculation that the simulator itself verifies empirically.
+* **state.js:** One shared object holding everything about the current game: hand totals, the shoe, balance, current bet, and whether the hand has been split.
+* **deck.js:** Builds and shuffles a six-deck shoe on the frontend, matching how the backend sets things up, and converts drawn cards into their Blackjack values.
+* **ui.js:** Handles everything visual such as rendering cards from the sprite sheet, updating the totals on screen, and showing/hiding buttons depending on what phase the game is in.
+* **actions.js:** The actual player actions. Splitting is the most involved one: it resets the hand totals, deals a card to each new hand, tracks separate bets, keeps track of which hands were doubled, and keeps a pointer to whichever hand is currently active so the right buttons act on the right hand.
+* **hints.js:** Asks the backend for the best move whenever it's your turn, via a request to `/get_hint`.
+* **events.js:** Every DOM event listener lives here: chip selection, action buttons, and a general click listener that handles things like moving between game phases.
+* **game.js:** Runs the actual game loop. `startGame` sets everything up and deals the first cards. `dealerPlay` flips the dealer's hidden card and plays out their hand under the soft-17 rule, with a short delay between each card so it's easier to follow. `endGame` handles figuring out who won, and `reset` clears the table and gets it ready for a new round.

@@ -34,12 +34,23 @@ async function runSimulator() {
     const numHands = document.getElementById("NInput").value;
     const resultsContainer = document.querySelector(".simulation-results");
 
+    // clamp client-side so we don't even bother hitting the backend with an invalid N
+    if (numHands > 100000) {
+        alert("Please enter 100,000 rounds or fewer.");
+        return;
+    }
+
     btn.disabled = true;
     loadingText.style.display = "block";
 
     try {
         const response = await fetch(`/simulate?N=${numHands}`);
         const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
         resultsContainer.style.display = "block";
         renderEvolutionChart(data);
         renderResultsChart(data);
