@@ -14,7 +14,12 @@ export async function updateActionHints() {
     const currentAces = state.playerAces[state.activeHand];
     const dealerCardValue = getValue(state.upCard);
 
+    // how many cards are actually in the active hand right now
+    const handSelector = state.isSplit ? `.player-hand-${state.activeHand}` : `.player-hand-0`;
+    const numCards = document.querySelector(handSelector).children.length;
+
     // pair info only matters pre-split, since you can't split a hand you've already split
+    // and only while the hand still hast its original 2 cards
     let isPair = false;
     let pairValue = 0;
     if (!state.isSplit && state.playerCard1 && state.playerCard2) {

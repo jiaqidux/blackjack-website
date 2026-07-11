@@ -1,7 +1,10 @@
-from blackjack import Card, optimal_strategy, random_strategy, dealer_strategy, simulator
+from blackjack import Card, optimal_strategy, random_strategy, dealer_strategy, simulator, hand_info
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 
 app = Flask(__name__)
+
+# pre-compute the full basic strategy chart on startup, so /strategy doesn't
+# have to recalculate every EV on every request
 
 HARD_TOTALS = []
 for i in range(5, 22):
@@ -19,6 +22,7 @@ DEALER_CARDS = []
 for i in range(2, 12):
     DEALER_CARDS.append(i)
 
+# each row is one player hand total, with the optimal action against every dealer upcard
 STRATEGY_HARD_ROWS = []
 for total in HARD_TOTALS:
     actions = []
@@ -37,8 +41,11 @@ for cards in SOFT_TOTALS:
 STRATEGY_PAIRS_ROWS = []
 for pair in PAIRS:
     actions = []
-    total = 12 if pair[0] == 11 else 2 * pair[0]
-    aces = 2 if pair[0] == 11 else 0
+    if pair[0] == 11:
+        total, aces = hand_info([Card("SPADES", "A"), Card("SPADES", "A")])
+    else:
+        total = 2 * pair[0]
+        aces = 0
     for dealer_card in DEALER_CARDS:
         actions.append(optimal_strategy(total, aces, dealer_card, 2, pair[0], True))
     STRATEGY_PAIRS_ROWS.append({"hand": pair, "actions": actions})
@@ -47,22 +54,30 @@ for pair in PAIRS:
 def index():
     return render_template("index.html")
 
+
+# given the current hand, returns thebest action to highlight
 @app.route("/get_hint")
 def get_hint():
     player_total = request.args.get("player_total", type=int)
     player_aces = request.args.get("player_aces", type=int)
     dealer_card = request.args.get("dealer_card", type=int)
-    is_pair = request.args.get("is_pair", type=str) == "true"
+    is_pair = request.args.get("is_pair", type=str) == "true"  # query params always arrive as strings
     pair_value = request.args.get("pair_value", type=int) if is_pair else None
+    num_cards = request.args.get("num_cards", type=int, default=2)
 
-    best_action = optimal_strategy(player_total, player_aces, dealer_card, 2, pair_value, is_pair)
+    best_action = optimal_strategy(player_total, player_aces, dealer_card, num_cards, pair_value, is_pair)
 
     return jsonify({"hint": best_action})
 
+
+# renders the full precomputed basic strategy chart
 @app.route("/strategy")
 def strategy():
     return render_template("strategy.html", hard_rows=STRATEGY_HARD_ROWS, soft_rows=STRATEGY_SOFT_ROWS, pairs_rows=STRATEGY_PAIRS_ROWS, dealer_cards=DEALER_CARDS)
 
+
+# runs N simulated rounds for each strategy (optimal/random/dealer-only) and
+# returns their results, used to power the simulator page's charts
 @app.route("/simulate")
 def simulate():
     try:
@@ -80,7 +95,7 @@ def simulate():
     return jsonify({
         "optimal": {
             "results": optimal_data,
-            "history": optimal_data.pop("History")
+            "history": optimal_data.pop("History") # split out so the chart data isn't duplicated in results
         },
         "random": {
             "results": random_data,
