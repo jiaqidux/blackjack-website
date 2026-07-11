@@ -7,7 +7,7 @@
 
 html, body {
     width: 100%;
-    height: 100%; /* to ocuppy the entire page*/
+    height: 100%; 
 }
 
 body {
@@ -104,15 +104,13 @@ body {
     cursor: pointer;
 }
 
-
 .hint-toggle-button.active {
     background-color: #1a4d3a;
     color: #35bd86;
 }
 
 .action-button-container button.illuminated {
-    box-shadow: 0 0 12px #daa520;
-    border: 3px solid #ffd700 !important;
+    box-shadow: 0 0 12px #daa520, 0 0 0 3px #ffd700;
     transform: scale(1.08);
     z-index: 10;
 }
@@ -348,7 +346,6 @@ button {
     overflow-x: auto;
 }
 
-
 .strategy-container .strategy-table {
     table-layout: fixed;
     margin: 0px auto 48px auto;
@@ -404,18 +401,15 @@ button {
     outline: none;
 }
 
-
 #NInput::-webkit-outer-spin-button,
 #NInput::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-
 #NInput:focus {
     outline: none;
 }
-
 
 .simulation-results {
     display: none;
@@ -495,7 +489,6 @@ button {
 
 /* AI USAGE */
 @media (max-width: 500px) {
-    /* 1. Ajustes del Layout General */
     .game-layout {
         height: auto; 
         padding: 8px;
@@ -519,7 +512,6 @@ button {
         height: 40px;
     }
 
-    /* 2. Marcadores y Contenedor de Apuestas */
     .bet-container {
         flex-direction: column; 
         gap: 12px;
@@ -536,7 +528,6 @@ button {
         gap: 10px;
     }
 
-    /* Redimensionado real de las fichas */
     .chips-container button, .chip {
         width: 64px;
         height: 64px;
@@ -549,7 +540,6 @@ button {
     .chip-10  { background-position: -192px 0px; }
     .chip-100 { background-position: -256px 0px; }
 
-    /* 3. Redimensionado y centrado de cartas (MÁS JUNTAS) */
     .card-container {
         width: 128px;         
         height: 171px;
@@ -618,9 +608,6 @@ button {
         padding: 0 20px;
     }
 
-    /* ==========================================
-       5. PÁGINA DEL SIMULADOR (simulation.html)
-       ========================================== */
     .simulation-info, .strategy-info {
         width: 95% !important; 
         margin: 10px auto !important;
@@ -653,7 +640,6 @@ button {
         border-bottom: 2px solid #daa520;
     }
 
-
     .run-button {
         font-size: 16px !important;
         padding: 6px 12px !important;
@@ -680,10 +666,6 @@ button {
         font-size: 11px !important;
     }
 
-
-    /* ==========================================
-       6. PÁGINA DE ESTRATEGIA (strategy.html)
-       ========================================== */
     .strategy-table {
         width: 100% !important;     
         table-layout: fixed !important; 
@@ -704,4 +686,4 @@ button {
         font-size: 10px !important; 
     }
 }
-/* END AI USAGE*/
+
