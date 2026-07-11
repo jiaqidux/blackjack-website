@@ -5,13 +5,13 @@
 ---
 
 ## Description
-This project is a web app that functions as a playable Blackjack game, an optimal strategy calculator, and a Monte Carlo strategy simulator. It's built with Python on the backend, Flask as the web server, and plain JavaScript (organized into modules) on the frontend. The whole point is to show the math behind Blackjack strategy, not just state it. Every decision the app recommends comes from actually calculating its expected value, so you can check that "playing optimally" really does lose less money over time compared to arbitrary or dealer-mimicking strategies.
+This project is a web app that functions as a playable Blackjack game, an optimal strategy calculator, and a Monte Carlo strategy simulator. It's built with Python on the backend, Flask as the web server, and plain JavaScript (organized into modules) on the frontend. The whole point is to show the math behind Blackjack strategy, not just state it. Every decision the app recommends comes from actually calculating its expected value (EV), so you can check that "playing optimally" really does lose less money over time compared to arbitrary or dealer-mimicking strategies.
 
 ---
 
 ## Python Backend: The Math Engine
 
-The core of this project is a mix of probability and dynamic programming, used to figure out the best move for any Blackjack hand. Instead of guessing or hard-coding a strategy chart, the code calculates the expected value (EV) of every possible decision directly.
+The core of this project is a mix of probability and dynamic programming, used to figure out the best move for any Blackjack hand. Instead of guessing or hard-coding a strategy chart, the code calculates the EV of every possible decision directly.
 
 ### Dealer Probability Distribution
 The `dealer_prob` function figures out, using recursion, exactly how likely the dealer is to land on each possible final total (17 through 21, or bust), based only on their face-up card. It walks through every card they could possibly draw next, multiplying probabilities together as it goes, and keeps adding up the odds until the dealer reaches a stopping point. It also follows the real casino rule that the dealer has to hit on a soft 17, not stand.
