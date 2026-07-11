@@ -4,6 +4,8 @@ import { getValue } from "./deck.js";
 
 import { clearIlluminatedButtons } from "./ui.js";
 
+// asks the backend for the optimal basic-strategy move given the current
+// hand, and lights up the matching button
 export async function updateActionHints() {
     clearIlluminatedButtons();
     if (!state.hintsEnabled || state.gameState !== "playing") return;
@@ -12,6 +14,7 @@ export async function updateActionHints() {
     const currentAces = state.playerAces[state.activeHand];
     const dealerCardValue = getValue(state.upCard);
 
+    // pair info only matters pre-split, since you can't split a hand you've already split
     let isPair = false;
     let pairValue = 0;
     if (!state.isSplit && state.playerCard1 && state.playerCard2) {
@@ -24,8 +27,9 @@ export async function updateActionHints() {
         const data = await response.json();
 
         if (data.hint) {
-            const action = data.hint.toLowerCase(); // e.g. "hit"
+            const action = data.hint.toLowerCase();
             const targetButton = document.getElementById(`${action}Button`);
+            // only illuminate if the button actually exists and isn't hidden
             if (targetButton && targetButton.style.display !== "none") {
                 targetButton.classList.add("illuminated");
             }

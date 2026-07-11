@@ -2,7 +2,7 @@
 
 import { state, cardWidth, cardHeight } from "./state.js";
 import { getValue } from "./deck.js";
-import { updateActionHints } from "./hints.js"; // Asegúrate de importar updateActionHints si se ejecuta aquí
+import { updateActionHints } from "./hints.js"; 
 
 export function createCard(suit, rank, faceDown=false) {
     // we create the card with front and back
@@ -16,6 +16,8 @@ export function createCard(suit, rank, faceDown=false) {
     cardFrontElem.classList.add('card-front');
     cardBackElem.classList.add('card-back');
 
+    // the card spritesheet is laid out in a grid by rank/suit
+    // we offset the background position to land on the right card image
     const scale = 1.8;
     let x = -(rank * cardWidth * scale);
     let y = -(suit * cardHeight * scale);
@@ -27,6 +29,7 @@ export function createCard(suit, rank, faceDown=false) {
     cardInnerElem.appendChild(cardFrontElem);
     cardInnerElem.appendChild(cardBackElem);
 
+    // face-down cards start pre-rotated so the back is showing
     if (faceDown) {
         cardInnerElem.style.transform = 'rotateY(180deg)';
     }
@@ -76,6 +79,8 @@ export function updateTotalUI() {
     const titleHand1 = document.querySelector(".title-hand-1");
     const hand1Container = document.querySelector(".player-hand-1-container");
 
+    // hide the dealer's hole card total until it's actually flipped
+    // show just the up card's value in the meantime
     if (!state.flipped) {
         dealerHeader.textContent = `Dealer: ${getValue(state.upCard)}`;
     } else {
@@ -87,6 +92,7 @@ export function updateTotalUI() {
         hand1Container.setAttribute("hidden", "true");
     } else {
         hand1Container.removeAttribute("hidden");
+        // little arrow points at whichever hand is currently active
         let showArrow1 = (state.gameState === "playing" && state.activeHand === 0) ? "  ❮❮" : "";
         let showArrow2 = (state.gameState === "playing" && state.activeHand === 1) ? "  ❮❮" : "";
 
@@ -111,7 +117,7 @@ export function displayResult(index) {
         multiplier = 2;
     } else if (state.playerTotal[index] === state.dealerTotal) {
         message = "Draw"
-        multiplier = 1;
+        multiplier = 1; // return the original bet, no gain/loss
     } else if (state.playerTotal[index] > state.dealerTotal) {
         message = "You won!"
         multiplier = 2;
@@ -122,6 +128,7 @@ export function displayResult(index) {
     let prefix = state.isSplit ? `Hand ${index + 1}: ` : "";
     showMessage(prefix + message);
 
+    // doubled hands staked twice the bet, so payouts need to reflect that
     let handStake = state.handDoubled[index] ? state.bet * 2 : state.bet;
     state.balance += multiplier * handStake;
     document.querySelector(".balance").textContent = `Balance:\n$${state.balance}`;

@@ -48,10 +48,12 @@ export function startGame() {
         shuffle();
     }
 
-    // deal dealer's cards
+    // deal dealer's cards: one face down (the "hole" card), one face up
     state.downCard = state.decks.pop();
     state.upCard = state.decks.pop();
 
+    // only the up card counts towards dealerTotal for now, since the down
+    // card isn't revealed until dealerPlay() flips it later
     state.dealerTotal += getValue(state.upCard);
     state.dealerAces += getAces(state.upCard);
 
@@ -66,6 +68,8 @@ export function startGame() {
     dealToHand(state.playerCard1, 0);
     dealToHand(state.playerCard2, 0);
 
+    // peek: if adding the hidden down card would make the dealer 21,
+    // that's a dealer blackjack, so we end immediately without letting the player act
     if (state.dealerTotal + getValue(state.downCard) == 21) {
         endGame();
         return;
@@ -86,9 +90,11 @@ export function startGame() {
 
 export async function dealerPlay() {
     state.isDealerDrawing = true;
+    // flip the hole card face up
     state.downCardElem.querySelector(".card-inner").style.transform = "rotateY(0deg)";
     state.flipped = true;
 
+    // now that it's revealed, actually add it to the dealer's total
     state.dealerTotal += getValue(state.downCard);
     state.dealerAces += getAces(state.downCard);
 
@@ -99,14 +105,15 @@ export async function dealerPlay() {
 
     updateTotalUI();
 
+    // no point drawing more cards for the dealer if every player hand already busted
     let allBusted = state.isSplit
         ? (state.playerTotal[0] > 21 && state.playerTotal[1] > 21)
         : (state.playerTotal[0] > 21);
 
     if (!allBusted) {
-        // dealer hits on soft 17
+        // dealer hits on soft 17 (17 with an ace still counted as 11)
         while (state.dealerTotal < 17 || (state.dealerTotal === 17 && state.dealerAces > 0)) {
-            await sleep(750);
+            await sleep(750); // pause between cards so it's visible/readable
 
             let card = state.decks.pop();
 
@@ -128,6 +135,7 @@ export async function dealerPlay() {
 }
 
 export async function endGame() {
+    // if the hand was split, we show each hand's result one at a time
     if (state.isSplit) {
         state.gameState = "showing_results";
     } else {
@@ -140,8 +148,10 @@ export async function endGame() {
 
     await dealerPlay();
 
+    // always show hand 0's result first
     state.showingHand = 0;
 
+    // re-set gameState since dealerPlay() was async and state could've been read elsewhere in between
     if (state.isSplit) {
         state.gameState = "showing_results";
     } else {
